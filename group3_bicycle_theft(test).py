@@ -154,7 +154,6 @@ for _, row in data_bicycle_theft.iterrows():
     ).add_to(m)
 
 m.save('bicycle_thefts_map.html')
-
 ### Data modeling
 ##drop null and datetime column
 data = data_bicycle_theft.dropna()
@@ -164,17 +163,20 @@ del data['REPORT_DATE']
 data.shape
 data.head()
 data.dtypes
+result = data.loc[(data["STATUS"]=="RECOVERED")]
 from sklearn import preprocessing
 encoder = preprocessing.LabelEncoder()
 #convert year columns
 data['OCC_YEAR'] = data['OCC_YEAR'].dt.year
-#label categorical features
-categorical_features = ['PRIMARY_OFFENCE','OCC_MONTH','OCC_DOW','REPORT_MONTH','REPORT_DOW','DIVISION','LOCATION_TYPE','PREMISES_TYPE','BIKE_MAKE','BIKE_MODEL','BIKE_TYPE','BIKE_COLOUR','OCC_YEAR']
+#label main feature
 data['STATUS'].replace('STOLEN', 0, inplace=True)
 data['STATUS'].replace(['UNKNOWN', 'RECOVERED'], 1, inplace=True)
-for feature in categorical_features:
-     data[feature] = encoder.fit_transform(data[feature])
-x=data.iloc[:,:-1].drop('STATUS',axis=1)
+#label categorical features
+categorical_features = ['PRIMARY_OFFENCE','OCC_MONTH','OCC_DOW','REPORT_MONTH','REPORT_DOW','DIVISION','LOCATION_TYPE','PREMISES_TYPE','BIKE_MAKE','BIKE_MODEL','BIKE_TYPE','BIKE_COLOUR','OCC_YEAR']
+'''for feature in categorical_features:
+     data[feature] = encoder.fit_transform(data[feature])'''
+data = pd.get_dummies(data)
+x=data.drop('STATUS',axis=1)
 y=data['STATUS']
 
 #normalize data
@@ -260,3 +262,4 @@ joblib.dump(log_classifier,'log_classifier.pkl')
 joblib.dump(dt_classifier,'dt_classifier.pkl')
 joblib.dump(rf_classifier,'rf_classifier.pkl')
 model_columns = list(x.columns)
+joblib.dump(model_columns,'model_columns.pkl')
