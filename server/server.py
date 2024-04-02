@@ -29,10 +29,46 @@ def predictLr():
     else:
         print ('Train the model first')
         return ('No model here to use')
+@app.route("/predict/dt", methods=['POST'])
+def predictDt():
+    if dt:
+        try:
+            json_data = request.get_json()
+            data_frame = pd.DataFrame(json_data)
+            print(json_data)
+            data = transformer.transform(data_frame)
+            print(data)
+            prediction = list(dt.predict(data))
+            print({'prediction': str(prediction)})
+            return jsonify({'prediction': str(prediction)})
+        except:
+            return jsonify({'trace': traceback.format_exc()})
+    else:
+        print ('Train the model first')
+        return ('No model here to use')
+@app.route("/predict/rf", methods=['POST'])
+def predictRf():
+    if rf:
+        try:
+            json_data = request.get_json()
+            data_frame = pd.DataFrame(json_data)
+            print(json_data)
+            data = transformer.transform(data_frame)
+            print(data)
+            prediction = list(rf.predict(data))
+            print({'prediction': str(prediction)})
+            return jsonify({'prediction': str(prediction)})
+        except:
+            return jsonify({'trace': traceback.format_exc()})
+    else:
+        print ('Train the model first')
+        return ('No model here to use')
 if __name__ == '__main__':
     lr = joblib.load('../log_classifier.pkl')
-    print ('Model loaded')
+    dt = joblib.load('../dt_classifier.pkl')
+    rf = joblib.load('../rf_classifier.pkl')
     transformer = joblib.load('../pipeline_transform.pkl')
+    print ('Model loaded')
     app.run(port=3000, debug=False)
        
 
