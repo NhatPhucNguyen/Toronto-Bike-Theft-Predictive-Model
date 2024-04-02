@@ -168,6 +168,7 @@ from sklearn import preprocessing
 encoder = preprocessing.LabelEncoder()
 #convert year columns
 data['OCC_YEAR'] = data['OCC_YEAR'].dt.year
+data["PRIMARY_OFFENCE"].value_counts()
 #remove unknown status
 data = data[data.STATUS != "UNKNOWN"]
 data['STATUS'].value_counts() #30187 STOLEN
@@ -189,18 +190,35 @@ data_upsampled['STATUS'].replace('STOLEN', 0, inplace=True)
 data_upsampled['STATUS'].replace('RECOVERED', 1, inplace=True)
 #label categorical features
 categorical_features = []
+num_attrs = []
 for col, col_type in data.dtypes.items():
-     if col_type == 'object' and col != 'STATUS':
+    if col != 'STATUS':
+        if col_type == 'object':
           categorical_features.append(col)
+        else:
+          num_attrs.append(col)
 '''for feature in categorical_features:
      data[feature] = encoder.fit_transform(data[feature])'''
 data_no_feature = data_upsampled.drop("STATUS",axis=1)
-data_dum = pd.get_dummies(data_no_feature,columns=categorical_features,dummy_na=False)
+'''data_dum = pd.get_dummies(data_no_feature,columns=categorical_features,dummy_na=False)
 column_names = data_dum.columns
 from sklearn.preprocessing import StandardScaler
 sc=StandardScaler()
-scaled_data = sc.fit_transform(data_dum)
-x=pd.DataFrame(scaled_data,columns=column_names)
+scaled_data = sc.fit_transform(data_dum)'''
+# build a pipeline for preprocessing the numerical attributes
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+# numeric_df = df_upsampled['Cost_of_Bike']
+num_pipeline = Pipeline([
+        ('std_scaler', StandardScaler()),
+    ])
+pipeline_transform = ColumnTransformer([
+        ("num", num_pipeline, num_attrs),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+])
+x=pipeline_transform.fit_transform(data_no_feature)
 y=data_upsampled['STATUS']
 
 #normalize data
@@ -232,7 +250,7 @@ log_classifier=LogisticRegression(random_state = 0)
 log_classifier.fit(X_train,y_train)
 #test
 y_pred = log_classifier.predict(X_test)
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score,classification_report
 log_score = accuracy_score(y_test, y_pred)
 print('Accuracy of Logistic is:', log_score)
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -242,16 +260,21 @@ disp.plot()
 plt.show()
 log_prob = log_classifier.predict_proba(X_test)
 plot_roc_curve(y_test, log_prob[:,1])
+classification_report(y_test, y_pred)
 ###Decision trees
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score,classification_report
 dt_classifier = DecisionTreeClassifier(criterion = 'entropy', random_state = 0)
 dt_classifier.fit(X_train, y_train)
-y_pred = dt_classifier.predict(X_test)
-dt_cm = confusion_matrix(y_test,y_pred)
+dt_pred = dt_classifier.predict(X_test)
+dt_cm = confusion_matrix(y_test,dt_pred)
 disp = ConfusionMatrixDisplay(confusion_matrix=dt_cm,display_labels=dt_classifier.classes_)
 disp.plot()
 plt.show()
-dt_score = accuracy_score(y_test, y_pred)
+dt_score = accuracy_score(y_test, dt_pred)
+classification_report(y_test,dt_pred)
+dt_pred_prob = dt_classifier.predict_proba(X_test)
+plot_roc_curve(y_test, dt_pred_prob[:,1])
 print('Decision trees accuracy score : {0:0.4f}'. format(dt_score))
 ##plot tree
 plt.figure(figsize=(30,20))
@@ -262,24 +285,24 @@ plt.show()
 #plot_roc_curve(y_test, dt_prob[:,1])
 ###Random forest
 from sklearn.ensemble import RandomForestClassifier
-rf_classifier = RandomForestClassifier(random_state=0)
+from sklearn.metrics import classification_report
+rf_classifier = RandomForestClassifier(random_state=0,max_depth=5)
 rf_classifier.fit(X_train, y_train)
 y_pred = rf_classifier.predict(X_test)
 rf_cm = confusion_matrix(y_test,y_pred)
 disp = ConfusionMatrixDisplay(confusion_matrix=rf_cm,display_labels=rf_classifier.classes_)
 disp.plot()
 plt.show()
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score,classification_report
 rf_score = accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred)
 print('Random forest accuracy score : {0:0.4f}'. format(rf_score))
 rf_prob = rf_classifier.predict_proba(X_test)
 plot_roc_curve(y_test, rf_prob[:,1])
-from sklearn.metrics import classification_report
-print(classification_report(y_test, y_pred))
+classification_report(y_test, y_pred)
 ###Save model
 import joblib
 joblib.dump(log_classifier,'log_classifier.pkl')
 joblib.dump(dt_classifier,'dt_classifier.pkl')
 joblib.dump(rf_classifier,'rf_classifier.pkl')
-model_columns = list(x.columns)
-joblib.dump(model_columns,'model_columns.pkl')
+joblib.dump(pipeline_transform,'pipeline_transform.pkl')

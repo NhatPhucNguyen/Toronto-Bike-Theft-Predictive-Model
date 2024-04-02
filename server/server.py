@@ -18,22 +18,8 @@ def predictLr():
         try:
             json_data = request.get_json()
             data_frame = pd.DataFrame(json_data)
-            print(data_frame.dtypes)
-            categorical_features = []
-            for col, col_type in data_frame.dtypes.items():
-                 if col_type == 'O':
-                      categorical_features.append(col)
-            query = pd.get_dummies(data_frame,columns=categorical_features,dummy_na=False)
-            print(query)
-            query = query.reindex(columns=model_columns, fill_value=0)
-            print(query['OCC_YEAR'])
-            from sklearn import preprocessing
-            scaler = preprocessing.StandardScaler()
-            # Fit your data on the scaler object
-            scaled_df = scaler.fit_transform(query)
-            #print(scaled_df)
-            # return to data frame
-            data = pd.DataFrame(scaled_df,columns=model_columns)
+            print(json_data)
+            data = transformer.transform(data_frame)
             print(data)
             prediction = list(lr.predict(data))
             print({'prediction': str(prediction)})
@@ -46,8 +32,7 @@ def predictLr():
 if __name__ == '__main__':
     lr = joblib.load('../log_classifier.pkl')
     print ('Model loaded')
-    model_columns = joblib.load('../model_columns.pkl')
-    print ('Model columns loaded')
+    transformer = joblib.load('../pipeline_transform.pkl')
     app.run(port=3000, debug=False)
        
 
