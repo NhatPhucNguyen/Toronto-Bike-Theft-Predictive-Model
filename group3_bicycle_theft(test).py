@@ -168,29 +168,49 @@ from sklearn import preprocessing
 encoder = preprocessing.LabelEncoder()
 #convert year columns
 data['OCC_YEAR'] = data['OCC_YEAR'].dt.year
+#remove unknown status
+data = data[data.STATUS != "UNKNOWN"]
+data['STATUS'].value_counts() #30187 STOLEN
+#resolve imbalance
+from sklearn.utils import resample
+
+# Separate majority and minority classes
+data_majority = data[data.STATUS=='STOLEN']
+data_minority = data[data.STATUS=='RECOVERED']
+ 
+# Upsample minority class
+data_minority_upsampled = resample(data_minority,
+                                 replace=True,     # sample with replacement
+                                 n_samples=31087,    # to match majority class
+                                 random_state=123)
+data_upsampled = pd.concat([data_majority, data_minority_upsampled])
 #label main feature
-data['STATUS'].replace('STOLEN', 0, inplace=True)
-data['STATUS'].replace(['UNKNOWN', 'RECOVERED'], 1, inplace=True)
+data_upsampled['STATUS'].replace('STOLEN', 0, inplace=True)
+data_upsampled['STATUS'].replace('RECOVERED', 1, inplace=True)
 #label categorical features
-categorical_features = ['PRIMARY_OFFENCE','OCC_MONTH','OCC_DOW','REPORT_MONTH','REPORT_DOW','DIVISION','LOCATION_TYPE','PREMISES_TYPE','BIKE_MAKE','BIKE_MODEL','BIKE_TYPE','BIKE_COLOUR','OCC_YEAR']
+categorical_features = []
+for col, col_type in data.dtypes.items():
+     if col_type == 'object' and col != 'STATUS':
+          categorical_features.append(col)
 '''for feature in categorical_features:
      data[feature] = encoder.fit_transform(data[feature])'''
-data = pd.get_dummies(data)
-x=data.drop('STATUS',axis=1)
-y=data['STATUS']
-
-#normalize data
-from sklearn.preprocessing import MinMaxScaler
-scaler = MinMaxScaler()
-
-data = scaler.fit_transform(data)
-#training
-from sklearn.model_selection import train_test_split
-X_train,X_test,y_train,y_test=train_test_split(x,y,test_size=0.25,random_state=0)
+data_no_feature = data_upsampled.drop("STATUS",axis=1)
+data_dum = pd.get_dummies(data_no_feature,columns=categorical_features,dummy_na=False)
+column_names = data_dum.columns
 from sklearn.preprocessing import StandardScaler
 sc=StandardScaler()
-X_train=sc.fit_transform(X_train)
-X_test=sc.transform(X_test)
+scaled_data = sc.fit_transform(data_dum)
+x=pd.DataFrame(scaled_data,columns=column_names)
+y=data_upsampled['STATUS']
+
+#normalize data
+#from sklearn.preprocessing import MinMaxScaler
+#scaler = MinMaxScaler()
+
+#scaled_data = scaler.fit_transform(scaled_data)
+#training
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(x,y,test_size=0.25,random_state=42)
 
 ###ROC curve
 import matplotlib.pyplot as plt

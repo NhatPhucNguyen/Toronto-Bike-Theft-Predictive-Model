@@ -12,23 +12,30 @@ app = Flask(__name__)
 @app.route("/", methods=['GET'])
 def welcome():
     return ("Server is running...")
-@app.route("/predict/lr", methods=['GET','POST'])
+@app.route("/predict/lr", methods=['POST'])
 def predictLr():
     if lr:
         try:
-            json_ = request.json
-            print(json_)
-            query = pd.get_dummies(pd.DataFrame(json_))
-            query = query.reindex(columns=model_columns, fill_value=0)
+            json_data = request.get_json()
+            data_frame = pd.DataFrame(json_data)
+            print(data_frame.dtypes)
+            categorical_features = []
+            for col, col_type in data_frame.dtypes.items():
+                 if col_type == 'O':
+                      categorical_features.append(col)
+            query = pd.get_dummies(data_frame,columns=categorical_features,dummy_na=False)
             print(query)
+            query = query.reindex(columns=model_columns, fill_value=0)
+            print(query['OCC_YEAR'])
             from sklearn import preprocessing
             scaler = preprocessing.StandardScaler()
             # Fit your data on the scaler object
             scaled_df = scaler.fit_transform(query)
+            #print(scaled_df)
             # return to data frame
-            query = pd.DataFrame(scaled_df, columns=model_columns)
-            print(query)
-            prediction = list(lr.predict(query))
+            data = pd.DataFrame(scaled_df,columns=model_columns)
+            print(data)
+            prediction = list(lr.predict(data))
             print({'prediction': str(prediction)})
             return jsonify({'prediction': str(prediction)})
         except:
@@ -41,6 +48,7 @@ if __name__ == '__main__':
     print ('Model loaded')
     model_columns = joblib.load('../model_columns.pkl')
     print ('Model columns loaded')
-    app.run(port=3000, debug=True)
+    app.run(port=3000, debug=False)
+       
 
 
