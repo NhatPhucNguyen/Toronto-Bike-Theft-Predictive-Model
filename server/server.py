@@ -5,14 +5,19 @@ Created on Fri Mar 29 22:29:20 2024
 @author: phucn
 """
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 import traceback
 import pandas as pd
 import joblib
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 @app.route("/", methods=['GET'])
+@cross_origin()
 def welcome():
     return ("Server is running...")
 @app.route("/predict/lr", methods=['POST'])
+@cross_origin()
 def predictLr():
     if lr:
         try:
@@ -30,6 +35,7 @@ def predictLr():
         print ('Train the model first')
         return ('No model here to use')
 @app.route("/predict/dt", methods=['POST'])
+@cross_origin()
 def predictDt():
     if dt:
         try:
@@ -47,6 +53,7 @@ def predictDt():
         print ('Train the model first')
         return ('No model here to use')
 @app.route("/predict/rf", methods=['POST'])
+@cross_origin()
 def predictRf():
     if rf:
         try:
