@@ -1,3 +1,10 @@
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr  8 20:14:06 2024
+
+@author: Harpreet
+"""
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 25 20:31:58 2024
@@ -75,18 +82,6 @@ theft_stats = bike_thefts_per_year.describe()
 # Print descriptive statistics
 print("Descriptive Statistics of Bike Thefts per Year:\n", theft_stats)
 
-# Visualize the number of bike thefts per year
-plt.figure(figsize=(10, 6))
-bike_thefts_per_year.plot(kind='bar', color='skyblue')
-plt.title('Number of Bike Thefts per Year')
-plt.xlabel('Year')
-plt.ylabel('Number of Thefts')
-plt.xticks(rotation=45)
-plt.grid(axis='y', linestyle='--', alpha=0.7)
-plt.tight_layout()
-plt.show()
-
-
 # Histogram
 plt.figure(figsize=(12, 6))
 sns.histplot(data=data_bicycle_theft, x='OCC_HOUR', bins=24, kde=True)
@@ -109,37 +104,7 @@ plt.show()
 # Set the style of seaborn
 sns.set_style("whitegrid")
 
-plt.figure(figsize=(12, 8)) # Set the figure size
-sns.violinplot(data=data_bicycle_theft, x='PRIMARY_OFFENCE', y='OCC_HOUR', palette='Set2')
 
-# Add title and labels
-plt.title('Distribution of Theft Occurrences by Primary Offence', fontsize=16)
-plt.xlabel('Primary Offence', fontsize=14)
-plt.ylabel('Hour of the Day', fontsize=14)
-
-# Rotate x-axis labels for better readability
-plt.xticks(rotation=45, ha='right')
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-#Correlation heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", annot_kws={"size": 10})
-plt.title('Correlation Matrix')
-plt.show()
-
-
-
-#Geographical distribution using scatter plot
-plt.figure(figsize=(10, 8))
-sns.scatterplot(data=data_bicycle_theft, x='LONGITUDE', y='LATITUDE', hue='STATUS', alpha=0.5)
-plt.title('Geographical Distribution of Bicycle Thefts')
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
-plt.legend(title='Status')
-plt.grid(True)
-plt.show()
 
 #Geographical distribution using interactive map
 m = folium.Map(location=[data_bicycle_theft['LATITUDE'].mean(), data_bicycle_theft['LONGITUDE'].mean()], zoom_start=12)
@@ -154,6 +119,62 @@ for _, row in data_bicycle_theft.iterrows():
     ).add_to(m)
 
 m.save('bicycle_thefts_map.html')
+# Set the color palette
+sns.set_palette(['#4B8BBE', '#CCCCCC'])  # Blue and grey color scheme
+
+# Line Plot: Trends over time (for example, thefts per year)
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=bike_thefts_per_year)
+plt.title('Trend of Bike Thefts per Year')
+plt.xlabel('Year')
+plt.ylabel('Number of Thefts')
+plt.grid(True)
+plt.show()
+
+# Pie Chart: Proportions of thefts by premises type
+plt.figure(figsize=(8, 8))
+data_bicycle_theft['PREMISES_TYPE'].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=140, colors=['#4B8BBE', '#CCCCCC'])
+plt.title('Proportion of Bike Thefts by Premises Type')
+plt.ylabel('')  # Hide the y-label
+plt.show()
+
+# Count Plot: Thefts by day of the week
+plt.figure(figsize=(12, 6))
+sns.countplot(x='OCC_DOW', data=data_bicycle_theft, order=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+plt.title('Bike Thefts by Day of the Week')
+plt.xlabel('Day of the Week')
+plt.ylabel('Number of Thefts')
+plt.xticks(rotation=45)
+plt.show()
+
+# Enhanced Scatter Plot: Cost vs. Speed with regression line
+plt.figure(figsize=(10, 8))
+sns.regplot(x='BIKE_COST', y='BIKE_SPEED', data=data_bicycle_theft, scatter_kws={'alpha':0.5}, line_kws={'color': 'grey'})
+plt.title('Bike Cost vs. Bike Speed with Regression Line')
+plt.xlabel('Bike Cost')
+plt.ylabel('Bike Speed')
+plt.grid(True)
+plt.show()
+
+# Updating the existing visuals with the chosen color palette
+# Histogram updated with blue color
+plt.figure(figsize=(12, 6))
+sns.histplot(data=data_bicycle_theft, x='OCC_HOUR', bins=24, color='#4B8BBE', kde=True)
+plt.title('Distribution of Theft Occurrences by Hour')
+plt.xlabel('Hour of the Day')
+plt.ylabel('Frequency')
+plt.grid(True)
+plt.show()
+
+# Box plot updated with blue and grey
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='STATUS', y='BIKE_COST', data=data_bicycle_theft, palette=['#4B8BBE', '#CCCCCC'])
+plt.title('Distribution of Bike Cost by Status')
+plt.xlabel('Status')
+plt.ylabel('Bike Cost')
+plt.grid(True)
+plt.show()
+
 ### Data modeling
 ##drop null and datetime column
 data = data_bicycle_theft.dropna()
