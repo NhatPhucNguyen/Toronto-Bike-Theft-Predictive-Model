@@ -299,6 +299,15 @@ print('Random forest accuracy score : {0:0.4f}'. format(rf_score))
 rf_prob = rf_classifier.predict_proba(X_test)
 plot_roc_curve(y_test, rf_prob[:,1])
 classification_report(y_test, y_pred)
+## Important features
+colnames = pipeline_transform.get_feature_names_out(data_no_feature.columns)
+importance = rf_classifier.feature_importances_
+indices = np.argsort(importance)[-10:]
+plt.title("Important Features")
+plt.barh(range(len(indices)),importance[indices],color='b',align='center')
+plt.yticks(range(len(indices)),[colnames[i] for i in indices])
+plt.xlabel('Relative Importance')
+plt.show()
 ###Save model
 import joblib
 joblib.dump(log_classifier,'log_classifier.pkl')

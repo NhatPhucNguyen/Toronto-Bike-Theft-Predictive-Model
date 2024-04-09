@@ -7,12 +7,13 @@ import {
     InputAdornment,
     Modal,
     TextField,
-    Typography
+    Typography,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Dayjs } from "dayjs";
 import { ChangeEvent, MouseEvent, useState } from "react";
 import InputData from "./interface/InputData";
+import { useNavigate } from "react-router-dom";
 type PredictiveModelSelection = "lr" | "dt" | "rf";
 type ModalValues = {
     result?: "Stolen" | "Recovered";
@@ -25,7 +26,7 @@ const modalStyle = {
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 500,
+    width: "fit-content",
     bgcolor: "background.paper",
     border: "2px solid #000",
     boxShadow: 24,
@@ -33,6 +34,7 @@ const modalStyle = {
     textAlign: "center",
 };
 const Home = () => {
+    const navigate = useNavigate();
     const [model, setModel] = useState<PredictiveModelSelection>();
     const [modalValues, setModalValues] = useState<ModalValues>({
         isShow: false,
@@ -48,21 +50,21 @@ const Home = () => {
             setModalValues((prev) => ({
                 ...prev,
                 model: "Random Forest",
-                accScore: 0.77,
+                accScore: 76.12,
             }));
         }
         if (modelSelected === "dt") {
             setModalValues((prev) => ({
                 ...prev,
                 model: "Decision Tree",
-                accScore: 0.99,
+                accScore: 99.32,
             }));
         }
         if (modelSelected === "lr") {
             setModalValues((prev) => ({
                 ...prev,
                 model: "Logistic Regression",
-                accScore: 0.91,
+                accScore: 95.48,
             }));
         }
     };
@@ -159,14 +161,19 @@ const Home = () => {
                         );
                         if (response.ok) {
                             const data = await response.json();
-                            setModalValues((prev) => ({
-                                ...prev,
-                                isShow: true,
-                                result:
-                                    data.prediction[1] == 0
-                                        ? "Stolen"
-                                        : "Recovered",
-                            }));
+                            if (data.trace) {
+                                alert("Please select enter required fields");
+                                navigate("/");
+                            } else {
+                                setModalValues((prev) => ({
+                                    ...prev,
+                                    isShow: true,
+                                    result:
+                                        data.prediction[1] == 0
+                                            ? "Stolen"
+                                            : "Recovered",
+                                }));
+                            }
                         }
                     } else {
                         alert("Please select a model");
@@ -467,13 +474,15 @@ const Home = () => {
                         variant="h6"
                         component="h3"
                     >
-                        Accuracy Score: {modalValues.accScore}
+                        Accuracy Score: {modalValues.accScore}%
                     </Typography>
-                    <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+                    <Typography id="modal-modal-description" sx={{ mt: 2,fontWeight:"bold",fontSize:23 }}>
                         The status of your bike is{" "}
                         {
                             <Typography
                                 component={"span"}
+                                fontWeight={"bold"}
+                                fontSize={"inherit"}
                                 color={
                                     modalValues.result === "Recovered"
                                         ? "green"
@@ -484,6 +493,20 @@ const Home = () => {
                             </Typography>
                         }
                     </Typography>
+                    <Box sx={{ mt: 2, display: "flex",gap:3 }}>
+                        <Box component={"figure"} boxShadow={2} padding={1}>
+                            <img src={`./${model}_cf.png`} width={300} height={260}/>
+                            <Typography component={"figcaption"}>Confusion Matrix</Typography>
+                        </Box>
+                        <Box component={"figure"} boxShadow={2} padding={1}>
+                            <img src={`./${model}_roc.png`} width={300} height={260} />
+                            <Typography component={"figcaption"}>ROC Curve</Typography>
+                        </Box>
+                        {model !== "lr" && <Box component={"figure"} boxShadow={2} padding={1}>
+                            <img src={`./${model}_imp.png`} width={300} height={260} />
+                            <Typography component={"figcaption"}>Important Features</Typography>
+                        </Box>}
+                    </Box>
                 </Box>
             </Modal>
         </main>
